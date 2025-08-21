@@ -1,78 +1,87 @@
 version: "3.9"
+
 services:
   postgres:
     image: postgres:14
     environment:
       POSTGRES_USER: auction_admin
       POSTGRES_PASSWORD: admin_pass
+      POSTGRES_DB: auction_db
     ports:
       - "5432:5432"
     volumes:
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auction_admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - auction-net
+
   mongo:
-    image: mongo:6
+    image: mongo:5
     ports:
       - "27017:27017"
     volumes:
-      - mongodata:/data/db
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - auction-net
 
   user-service:
-    build: ./backend/user-service
+    build: ./services/user-service
     ports:
       - "8081:8081"
-    environment:
-      DATABASE_URL: postgres://auction_user:auction_pass@postgres:5432/auction_db
-      JWT_SECRET: dev_secret_change_me
-      PORT: 8081
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - auction-net
 
   auction-service:
-    build: ./backend/auction-service
+    build: ./services/auction-service
     ports:
       - "8082:8082"
-    environment:
-      DATABASE_URL: postgres://auction_user:auction_pass@postgres:5432/auction_db
-      JWT_SECRET: dev_secret_change_me
-      PORT: 8082
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - auction-net
 
   bid-service:
-    build: ./backend/bid-service
+    build: ./services/bid-service
     ports:
       - "8083:8083"
-    environment:
-      DATABASE_URL: postgres://auction_user:auction_pass@postgres:5432/auction_db
-      JWT_SECRET: dev_secret_change_me
-      PORT: 8083
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - auction-net
 
   payment-service:
-    build: ./backend/payment-service
+    build: ./services/payment-service
     ports:
       - "8084:8084"
-    environment:
-      DATABASE_URL: postgres://auction_user:auction_pass@postgres:5432/auction_db
-      JWT_SECRET: dev_secret_change_me
-      PORT: 8084
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - auction-net
 
   notification-service:
-    build: ./backend/notification-service
+    build: ./services/notification-service
     ports:
       - "8085:8085"
-    environment:
-      MONGO_URL: mongodb://mongo:27017/notifications_db
-      PORT: 8085
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+    networks:
+      - auction-net
 
   frontend:
     build: ./frontend
@@ -84,7 +93,12 @@ services:
       - bid-service
       - payment-service
       - notification-service
+    networks:
+      - auction-net
 
 volumes:
-  pgdata:
-  mongodata:
+  mongo-data:
+
+networks:
+  auction-net:
+    driver: bridge
