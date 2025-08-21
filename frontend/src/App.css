@@ -1,0 +1,23 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+  color: #f5f5f5;
+}
+.navbar {
+  display: flex;
+  gap: 20px;
+  padding: 15px;
+  background-color: rgba(0,0,0,0.3);
+}
+.navbar a {
+  color: #f5f5f5;
+  text-decoration: none;
+  font-weight: bold;
+}
+.content { padding: 20px; }
+.card { background:#1b263b; padding:14px; border-radius:8px; margin:10px 0; }
+.btn { background:#e0e1dd; color:#0d1b2a; padding:6px 10px; border-radius:6px; text-decoration:none; }
+.timer { color:#ffb703; font-weight:bold; }
+input, select, button { margin:6px 0; padding:10px; border-radius:6px; border:1px solid #325; }
+button { cursor: pointer; }

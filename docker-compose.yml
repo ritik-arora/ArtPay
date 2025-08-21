@@ -1,0 +1,90 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: auction_admin
+      POSTGRES_PASSWORD: admin_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+
+  user-service:
+    build: ./backend/user-service
+    ports:
+      - "8081:8081"
+    environment:
+      DATABASE_URL: postgres://auction_user:auction_pass@postgres:5432/auction_db
+      JWT_SECRET: dev_secret_change_me
+      PORT: 8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  auction-service:
+    build: ./backend/auction-service
+    ports:
+      - "8082:8082"
+    environment:
+      DATABASE_URL: postgres://auction_user:auction_pass@postgres:5432/auction_db
+      JWT_SECRET: dev_secret_change_me
+      PORT: 8082
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  bid-service:
+    build: ./backend/bid-service
+    ports:
+      - "8083:8083"
+    environment:
+      DATABASE_URL: postgres://auction_user:auction_pass@postgres:5432/auction_db
+      JWT_SECRET: dev_secret_change_me
+      PORT: 8083
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  payment-service:
+    build: ./backend/payment-service
+    ports:
+      - "8084:8084"
+    environment:
+      DATABASE_URL: postgres://auction_user:auction_pass@postgres:5432/auction_db
+      JWT_SECRET: dev_secret_change_me
+      PORT: 8084
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  notification-service:
+    build: ./backend/notification-service
+    ports:
+      - "8085:8085"
+    environment:
+      MONGO_URL: mongodb://mongo:27017/notifications_db
+      PORT: 8085
+    depends_on:
+      - mongo
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - user-service
+      - auction-service
+      - bid-service
+      - payment-service
+      - notification-service
+
+volumes:
+  pgdata:
+  mongodata:
